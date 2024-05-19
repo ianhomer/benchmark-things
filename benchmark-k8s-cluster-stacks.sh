@@ -3,14 +3,18 @@
 set -e
 
 VERBOSE=0
-PRE_CLEAN=0
+CLEAN=0
+BENCHMARK=1
+KEEP_CLUSTER=0
 TIMING_FILE=/tmp/benchmark-timing.txt
 
-while getopts "ct:v" opt; do
+while getopts "ckpt:v" opt; do
   case "$opt" in
-  c) PRE_CLEAN=1 ;;
-  t) TOOL=$OPTARG ;;
-  v) VERBOSE=1 ;;
+    c) CLEAN=1 ; BENCHMARK=0 ;;
+    p) CLEAN=1 ;;
+    k) KEEP_CLUSTER=1 ;;
+    t) TOOL=$OPTARG ;;
+    v) VERBOSE=1 ;;
   esac
 done
 
@@ -57,18 +61,18 @@ function benchmark() {
 
   [[ $VERBOSE == "1" ]] && kubectl get pods -A
 
-  clean $tool
+  [[ $KEEP_CLUSTER == "0" ]] && clean $tool
   date
   time:: "$tool : after clean" | tee -a $TIMING_FILE
 }
 
 if [[ -n $TOOL ]] ; then
-  [[ "$PRE_CLEAN" == "1" ]] && clean $TOOL
-  benchmark $TOOL
+  [[ "$CLEAN" == "1" ]] && clean $TOOL
+  [[ "$BENCHMARK" == "1" ]] && benchmark $TOOL
 else
   for t in minikube kind k3d ; do 
-    [[ "$PRE_CLEAN" == "1" ]] && clean $t
-    benchmark $t
+    [[ "$CLEAN" == "1" ]] && clean $t
+    [[ "$BENCHMARK" == "1" ]] && benchmark $t
   done
 fi
 
