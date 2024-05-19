@@ -21,7 +21,7 @@ function time::mark() {
 
 function time::() {
   time=$(time::ms)
-  printf "⨂ %-20s : %8sms\n" \
+  printf "⨂ %-25s : %8sms\n" \
     "$1" $(( ( $time - $TIME_START ) ))
 }
 
