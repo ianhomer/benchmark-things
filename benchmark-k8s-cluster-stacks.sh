@@ -45,7 +45,7 @@ function benchmark() {
   case $tool in 
     minikube) time minikube start ;;
     kind) time kind -q -v $VERBOSE create cluster ;;
-    k3d) time k3d cluster create my-cluster ;;
+    k3d) time k3d cluster create my-cluster --k3s-arg '--disable=traefik@server:*' ;;
   esac
   time:: "$tool : after create" | tee -a $TIMING_FILE
 
