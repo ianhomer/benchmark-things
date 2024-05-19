@@ -52,7 +52,7 @@ function benchmark() {
   case $tool in 
     minikube) await "kubectl get pods -A | grep Running | wc -l | grep 6" ;;
     kind) await "kubectl get pods -A | grep Running | wc -l | grep 9" ;;
-    k3d) await "kubectl get pods -A | grep Running | wc -l | grep 5" ;;
+    k3d) await "kubectl get pods -A | grep Running | wc -l | grep 3" ;;
   esac
   time:: "$tool : after running" | tee -a $TIMING_FILE
   time kubectl create deployment nginx --image nginx
