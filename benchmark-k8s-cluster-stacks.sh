@@ -31,9 +31,10 @@ function await() {
 function clean() {
   tool=$1
   case $tool in
-    minikube) time minikube delete --all ;;
     kind) time kind delete cluster ;;
     k3d) time k3d cluster delete my-cluster ;;
+    microk8s) time microk8s uninstall ;;
+    minikube) time minikube delete --all ;;
   esac
 }
 
@@ -43,20 +44,31 @@ function benchmark() {
   date
   time:: "$tool : start" | tee -a $TIMING_FILE
   case $tool in 
-    minikube) time minikube start ;;
     kind) time kind -q -v $VERBOSE create cluster ;;
     k3d) time k3d cluster create my-cluster --k3s-arg '--disable=traefik@server:*' ;;
+    microk8s) 
+      time microk8s install
+      time microk8s start
+      mkdir -p ~/.microk8s
+      microk8s config > ~/.microk8s/config
+    ;;
+    minikube) time minikube start ;;
   esac
   time:: "$tool : after create" | tee -a $TIMING_FILE
 
   case $tool in 
-    minikube) await "kubectl get pods -A | grep Running | wc -l | grep 6" ;;
     kind) await "kubectl get pods -A | grep Running | wc -l | grep 9" ;;
     k3d) await "kubectl get pods -A | grep Running | wc -l | grep 3" ;;
+    microk8s) microk8s status --wait-ready ;;
+    minikube) await "kubectl get pods -A | grep Running | wc -l | grep 6" ;;
   esac
   time:: "$tool : after running" | tee -a $TIMING_FILE
-  time kubectl create deployment nginx --image nginx
-  await "kubectl get pods -A | grep nginx | grep Running"
+  case $tool in
+    microk8s) KUBECTL="microk8s kubectl" ;;
+    *) KUBECTL="kubectl" ;;
+  esac
+  time $KUBECTL create deployment nginx --image nginx
+  await "$KUBECTL get pods -A | grep nginx | grep Running"
   time:: "$tool : after deploy" | tee -a $TIMING_FILE
 
   [[ $VERBOSE == "1" ]] && kubectl get pods -A
